@@ -209,3 +209,6 @@ AppPackages/
 #####
 # End of core ignore list, below put you custom 'per project' settings (patterns or path)
 #####
+/GalaxusScam/bin
+/GalaxusScam/obj
+/GalaxusScam/Properties/PublishProfiles

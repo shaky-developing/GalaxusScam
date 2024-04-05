@@ -220,36 +220,44 @@ static class Program
 
 	static void AppendProductsJsonFile()
 	{
-		Console.ForegroundColor = ConsoleColor.Yellow;
-		int IdCount = 1;
-		Console.Write("Creating products file... 0%");
-		for (int i = 1; i < 7; i++)
+		using (StreamWriter streamWriter = File.AppendText(fileProductsPath))
 		{
-			List<Products> result = new List<Products>();
-			for (int num = 75000; num <= 9999999; num++)
+			Console.ForegroundColor = ConsoleColor.Yellow;
+			int IdCount = 1;
+			Console.Write("Creating products file... 0%");
+			for (int i = 1; i < 7; i++)
 			{
-				Products products = new Products()
+				List<Products> result = new List<Products>();
+				for (int num = 75000; num <= 9999999; num++)
 				{
-					Id = IdCount,
-					Page = i,
-					Product = num
-				};
-				result.Add(products);
-				IdCount++;
-			}
+					Products products = new Products()
+					{
+						Id = IdCount,
+						Page = i,
+						Product = num
+					};
+					result.Add(products);
+					IdCount++;
 
-			string progress = ((100.00/6.00) * i).ToString("0.00");
-			Console.Write($"\rCreating products file... {progress}%");
+					string jsonContent = JsonConvert.SerializeObject(result, Newtonsoft.Json.Formatting.Indented);
+					streamWriter.WriteLine($"{jsonContent}");
 
-			string jsonContent = JsonConvert.SerializeObject(result, Newtonsoft.Json.Formatting.Indented);
+					result = new List<Products>();
 
-			using (StreamWriter streamWriter = File.AppendText(fileProductsPath))
-			{
-				streamWriter.WriteLine(jsonContent);
+					if (num == (9999999 / 2 - 75000)) {
+						string progressHalf = ((100.00 / 6.00) * (i - 0.5)).ToString("0.00");
+						Console.Write($"\rCreating products file... {progressHalf}%");
+					}
+				}
+
+				string progress = ((100.00 / 6.00) * i).ToString("0.00");
+				Console.Write($"\rCreating products file... {progress}%");
+
 			}
 		}
 		Console.ForegroundColor = ConsoleColor.Green;
 		Console.WriteLine("Products file created successfully at: " + fileInfoPath);
 		Console.ForegroundColor = ConsoleColor.White;
 	}
+	
 }

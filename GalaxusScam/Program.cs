@@ -1,263 +1,235 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Diagnostics;
-using System.Net.Http.Json;
 using System.Runtime.InteropServices;
-
-class Products
-{
-	public int Id { get; set; }
-	public int Page { get; set; }
-	public int Product { get; set; }
-}
 
 class Settings
 {
-	public int LastProductId { get; set; }
-	public int SleepTimeBeforeClosing { get; set; }
-	public int MinWaitingTimeRange { get; set; }
-	public int MaxWaitingTimeRange { get; set; }
+    public int LastProduct { get; set; }
+    public int LastPage { get; set; }
+    public int SleepTimeBeforeClosing { get; set; }
+    public int MinWaitingTimeRange { get; set; }
+    public int MaxWaitingTimeRange { get; set; }
 }
 
 static class Program
 {
-	public static string fileProductsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Products.json");
-	public static string fileInfoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Settings.json");
+    private static string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Settings.json");
 
-	static Settings _settings = new Settings();
-	static List<Products> _products = new List<Products>();
+    private static Settings _settings = new Settings();
 
-	[DllImport("user32.dll")]
-	private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-	public const int SW_MINIMIZE = 6;
+    public const int SW_MINIMIZE = 6;
 
-	public static async Task Main(string[] args)
-	{
-		ProgramApplication();
-	}
+    public static async Task Main(string[] args)
+    {
+        ProgramApplication();
+    }
 
-	static void ProgramApplication()
-	{
-		Console.WriteLine("*********************** Start");
-		Console.WriteLine("Do you want to download a file?:");
-		Console.WriteLine(" Press Y for Settings.json and Products.json");
-		Console.WriteLine(" Press S for Settings.json");
-		Console.WriteLine(" Press P for Products.json");
-		Console.WriteLine(" Press anything else for none");
-		string input = Console.ReadLine();
-		input = input?.ToLower().Trim();
-		if (input == "y")
-		{
-			AppendSettingsJsonFile();
-			AppendProductsJsonFile();
-		}
-		else if (input == "s")
-		{
-			AppendSettingsJsonFile();
-		}
-		else if (input == "p")
-		{ 
-			AppendProductsJsonFile();
-		}
-		Console.WriteLine("***********************");
-		Console.Clear();
-		Console.ForegroundColor = ConsoleColor.Yellow;
-		Console.WriteLine("Loading Information...");
-		DeserializeInformationJson();
-		DeserializeProductsJson();
-		Console.Clear();
-		Console.ForegroundColor = ConsoleColor.Cyan;
-		Console.ForegroundColor = ConsoleColor.Red;
-		Console.WriteLine("If you encounter any problems please contact your amazing girlfriend who did this program for you. Kuss");
-		Console.ForegroundColor = ConsoleColor.Cyan;
-		Products lastProduct = _products.FirstOrDefault(p => p.Id == _settings.LastProductId); 
-		Console.WriteLine("*****************************");
-		Console.WriteLine($"LastProduct:");
-		Console.ForegroundColor = ConsoleColor.DarkCyan;
-		Console.WriteLine($" Id: {lastProduct.Id}");
-		Console.WriteLine($" Page: S{lastProduct.Page}");
-		Console.WriteLine($" Product Number: {lastProduct.Product}");
-		Console.ForegroundColor = ConsoleColor.Cyan;
-		Console.WriteLine($"SleepTimeBeforeClosing: {_settings.SleepTimeBeforeClosing}");
-		Console.WriteLine($"MinWaitingTimeRange: {_settings.MinWaitingTimeRange}");
-		Console.WriteLine($"MaxWaitingTimeRange: {_settings.MaxWaitingTimeRange}");
-		Console.WriteLine("*****************************");
-		Console.ForegroundColor = ConsoleColor.White;
-		Console.ForegroundColor = ConsoleColor.Green;
-		Console.WriteLine("Reviews to go: " + (_products.Count - _settings.LastProductId));
-		Console.ForegroundColor = ConsoleColor.White;
+    private static void ProgramApplication()
+    {
+        try
+        {
+            Console.WriteLine("*********************** Start");
+            Console.Write("Do you want to download / update the Settings.json file?: [y/n]");
+            string input = Console.ReadLine();
+            input = input?.ToLower().Trim();
+            if (input == "y")
+            {
+                AppendSettingsJsonFile();
+            }
 
-		foreach (Products product in _products)
-		{
-			if (product.Id < _settings.LastProductId)
-			{
-				continue;
-			}
+            Console.WriteLine("***********************");
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Loading Information...");
+            DeserializeInformationJson();
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("If you encounter any problems please contact your amazing girlfriend who did this program for you. Kuss");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("*****************************");
+            Console.WriteLine($"LastPage: {_settings.LastPage}");
+            Console.WriteLine($"LastProduct: {_settings.LastProduct}");
+            Console.WriteLine($"SleepTimeBeforeClosing: {_settings.SleepTimeBeforeClosing}");
+            Console.WriteLine($"MinWaitingTimeRange: {_settings.MinWaitingTimeRange}");
+            Console.WriteLine($"MaxWaitingTimeRange: {_settings.MaxWaitingTimeRange}");
+            Console.WriteLine("*****************************");
+            Console.ForegroundColor = ConsoleColor.White;
 
-			string line = $"https://www.galaxus.ch/s{product.Page}/product/{product.Product}/ratings/ratingform?OverallRating=4";
-			ProcessStartInfo psi = new ProcessStartInfo("brave.exe")
-			{
-				FileName = @"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
-				Arguments = line
-			};
 
-			Console.WriteLine($"Opened Tab: {DateTime.Now} - ({product.Id}) {line}");
-			var process = Process.Start(psi);
+            for (int page = _settings.LastPage; page <= 6; page++)
+            {
+                for (int product = _settings.LastProduct; product <= 9999999; product++)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"{product}/9999999");
+                    Console.ForegroundColor = ConsoleColor.White;
 
-			// Minimize the window after the process has started
-			Thread.Sleep(1000); // Wait for a brief moment to ensure the window has been created
-			if (process.MainWindowHandle != IntPtr.Zero)
-			{
-				ShowWindow(process.MainWindowHandle, SW_MINIMIZE);
-			}
+                    string line = $"https://www.galaxus.ch/s{page}/product/{product}/ratings/ratingform?OverallRating=4";
+                    ProcessStartInfo psi = new ProcessStartInfo("brave.exe")
+                    {
+                        FileName = @"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+                        Arguments = line
+                    };
 
-			Timer(_settings.SleepTimeBeforeClosing, "Time until Tab closing", "Tab closed.");
+                    Console.WriteLine($"Opened Tab: {DateTime.Now} - ({product}) {line}");
+                    var process = Process.Start(psi);
 
-			process.Kill();
-			int waitTime = new Random().Next(_settings.MinWaitingTimeRange, _settings.MaxWaitingTimeRange);
-			Timer(waitTime, "Time until next Tab", "*******************************");
-			
-			_settings.LastProductId = product.Id;
-			UpdateLastProuctId();
+                    // Minimize the window after the process has started
+                    Thread.Sleep(1000); // Wait for a brief moment to ensure the window has been created
+                    if (process.MainWindowHandle != IntPtr.Zero)
+                    {
+                        ShowWindow(process.MainWindowHandle, SW_MINIMIZE);
+                    }
 
-		}
+                    _settings.LastPage = page;
+                    _settings.LastProduct = product;
+                    UpdateSettingsFile();
+                    Timer(_settings.SleepTimeBeforeClosing, "Time until Tab closing", "Tab closed.");
 
-		Console.WriteLine("Done!");
-	}
+                    process.Kill();
+                    int waitTime = new Random().Next(_settings.MinWaitingTimeRange, _settings.MaxWaitingTimeRange);
+                    Timer(waitTime, "Time until next Tab", "*******************************");
 
-	static void DeserializeInformationJson()
-	{
-		string jsonContent = File.ReadAllText(fileInfoPath);
-		_settings = JsonConvert.DeserializeObject<Settings>(jsonContent);
-	}
+                }
+            }
+            Console.WriteLine("Done!");
+        }
+        catch (Exception ex)
+        {
 
-	static void DeserializeProductsJson()
-	{
-		using (StreamReader streamReader = File.OpenText(fileProductsPath))
-		using (JsonTextReader reader = new JsonTextReader(streamReader))
-		{
-			JsonSerializer serializer = new JsonSerializer();
+            WriteErrorMessage(ex, "Programm");
+        }
+    }
 
-			// Ensure we start reading from the beginning of an array
-			if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-			{
-				throw new JsonReaderException("Expected start of array");
-			}
+    private static void DeserializeInformationJson()
+    {
+        try
+        {
+            string jsonContent = File.ReadAllText(filePath);
+            _settings = JsonConvert.DeserializeObject<Settings>(jsonContent);
+        }
+        catch (Exception ex)
+        {
+            WriteErrorMessage(ex, "DeserializeInformationJson");
+        }
+    }
 
-			// Read each JSON object within the array
-			while (reader.Read() && reader.TokenType != JsonToken.EndArray)
-			{
-				Products product = serializer.Deserialize<Products>(reader);
-				_products.Add(product);
-			}
-		}
-	}
+    private static void UpdateSettingsFile()
+    {
+        try
+        {
+            var updatedJsonContent = JsonConvert.SerializeObject(_settings, Formatting.Indented);
+            // Write the updated JSON content back to the file
+            File.WriteAllText(filePath, updatedJsonContent);
+            Console.WriteLine("Settings updated successfully!");
+        }
+        catch (Exception ex)
+        {
+            WriteErrorMessage(ex, "UpdateSettingsFile");
+        }
 
-	static void UpdateLastProuctId()
-	{
-		var updatedJsonContent = JsonConvert.SerializeObject(_settings, Formatting.Indented);
-		// Write the updated JSON content back to the file
-		File.WriteAllText(fileInfoPath, updatedJsonContent);
-	}
+    }
 
-	static void Timer(int timeInMinutes, string timerText, string closingText)
-	{
-		for (int i = timeInMinutes * 60; i > 0; i--)
-		{
-			int minutes = i / 60;
-			string stringMinutes = minutes.ToString();
-			int seconds = i % 60;
-			string stringSeconds = seconds.ToString();
+    private static void Timer(int timeInMinutes, string timerText, string closingText)
+    {
+        try
+        {
+            for (int i = timeInMinutes * 60; i > 0; i--)
+            {
+                int minutes = i / 60;
+                string stringMinutes = minutes.ToString();
+                int seconds = i % 60;
+                string stringSeconds = seconds.ToString();
 
-			if (seconds < 10)
-			{
-				stringSeconds = $"0{stringSeconds}";
-			}
-			if (minutes < 10)
-			{
-				stringMinutes = $"0{stringMinutes}";
-			}
+                if (seconds < 10)
+                {
+                    stringSeconds = $"0{stringSeconds}";
+                }
+                if (minutes < 10)
+                {
+                    stringMinutes = $"0{stringMinutes}";
+                }
 
-			Console.Write($"\r{timerText}: {stringMinutes} minutes {stringSeconds} seconds");
-			Thread.Sleep(1000); // Sleep for 1 second
-		}
-		Console.Write($"\r{timerText}: 00 minutes 00 seconds");
-		Thread.Sleep(500); // Sleep for 1 second
-		Console.Write("\r" + new string(' ', Console.WindowWidth - 1)); // Clear the line
-		Console.WriteLine($"\r{closingText}");
-		Console.WriteLine();
-	}
+                Console.Write($"\r{timerText}: {stringMinutes} minutes {stringSeconds} seconds");
+                Thread.Sleep(1000); // Sleep for 1 second
+            }
+            Console.Write($"\r{timerText}: 00 minutes 00 seconds");
+            Thread.Sleep(500); // Sleep for half a
+                               // second
+            Console.Write("\r" + new string(' ', Console.WindowWidth - 1)); // Clear the line
+            Console.WriteLine($"\r{closingText}");
+            Console.WriteLine();
+        }
+        catch (Exception ex)
+        {
 
-	static void AppendSettingsJsonFile()
-	{
-		Console.ForegroundColor = ConsoleColor.Yellow;
-		Console.WriteLine("Creating settings file...");
-		if (File.Exists(fileInfoPath))
-		{
-			File.Delete(fileInfoPath);
-		}
+            WriteErrorMessage(ex, "Timer");
+        }
 
-		Settings settings = new Settings
-			{
-				LastProductId = 1,
-				SleepTimeBeforeClosing = 1, // in minutes
-				MinWaitingTimeRange = 5, // in minutes
-				MaxWaitingTimeRange = 15 // in minutes
-			};
+    }
 
-		// Convert data to JSON string
-		string jsonContent = JsonConvert.SerializeObject(settings, Newtonsoft.Json.Formatting.Indented);
+    private static void AppendSettingsJsonFile()
+    {
+        try
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Creating settings file...");
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
 
-		using (StreamWriter streamWriter = File.AppendText(fileInfoPath))
-		{
-			streamWriter.WriteLine(jsonContent);
-		}
-		Console.ForegroundColor = ConsoleColor.Green;
-		Console.WriteLine("Settings File created successfully at: " + fileInfoPath);
-		Console.ForegroundColor= ConsoleColor.White;
-	}
+            Settings settings = new Settings
+            {
+                LastProduct = 75000,
+                LastPage = 1,
+                SleepTimeBeforeClosing = 1, // in minutes
+                MinWaitingTimeRange = 5, // in minutes
+                MaxWaitingTimeRange = 15 // in minutes
+            };
 
-	static void AppendProductsJsonFile()
-	{
-		using (StreamWriter streamWriter = File.AppendText(fileProductsPath))
-		{
-			Console.ForegroundColor = ConsoleColor.Yellow;
-			int IdCount = 1;
-			Console.Write("Creating products file... 0%");
-			for (int i = 1; i < 7; i++)
-			{
-				List<Products> result = new List<Products>();
-				for (int num = 75000; num <= 9999999; num++)
-				{
-					Products products = new Products()
-					{
-						Id = IdCount,
-						Page = i,
-						Product = num
-					};
-					result.Add(products);
-					IdCount++;
+            // Convert data to JSON string
+            string jsonContent = JsonConvert.SerializeObject(settings, Newtonsoft.Json.Formatting.Indented);
 
-					string jsonContent = JsonConvert.SerializeObject(result, Newtonsoft.Json.Formatting.Indented);
-					streamWriter.WriteLine($"{jsonContent}");
+            using (StreamWriter streamWriter = File.AppendText(filePath))
+            {
+                streamWriter.WriteLine(jsonContent);
+            }
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Settings File created successfully at: " + filePath);
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        catch (Exception ex)
+        {
 
-					result = new List<Products>();
+            WriteErrorMessage(ex, "Sppend settings json file");
+        }
 
-					if (num == (9999999 / 2 - 75000)) {
-						string progressHalf = ((100.00 / 6.00) * (i - 0.5)).ToString("0.00");
-						Console.Write($"\rCreating products file... {progressHalf}%");
-					}
-				}
+    }
 
-				string progress = ((100.00 / 6.00) * i).ToString("0.00");
-				Console.Write($"\rCreating products file... {progress}%");
+    private static void WriteErrorMessage(Exception ex, string place)
+    {
+        string traceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "errorlog.txt");
+        if (!File.Exists(traceFilePath))
+        {
+            File.Create(traceFilePath);
+        }
 
-			}
-		}
-		Console.ForegroundColor = ConsoleColor.Green;
-		Console.WriteLine("Products file created successfully at: " + fileInfoPath);
-		Console.ForegroundColor = ConsoleColor.White;
-	}
-	
+        Console.ForegroundColor = ConsoleColor.Red;
+        string errorContent = $"{DateTime.Now}\nAn error occured in {place}\nError: {ex.Message}";
+        Console.WriteLine(errorContent);
+
+        using (StreamWriter streamWriter = File.AppendText(filePath))
+        {
+            streamWriter.WriteLine(errorContent);
+        }
+
+        Console.ForegroundColor = ConsoleColor.White;
+
+    }
+
 }
